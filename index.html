@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.3/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .retro {
+            background-color: #f0e68c;
+            color: #333;
+        }
+    </style>
+</head>
+<body class="retro">
+    <div class="flex flex-col items-center p-6">
+        <h1 class="text-3xl mb-4">Todo App</h1>
+        <form id="taskForm" class="w-full max-w-sm bg-white p-4 rounded shadow">
+            <div class="mb-4">
+                <label for="taskDescription" class="block text-lg mb-2">Task Description</label>
+                <input type="text" id="taskDescription" class="p-2 border rounded w-full" placeholder="Enter task description" required>
+            </div>
+            <div class="mb-4">
+                <label for="dueDate" class="block text-lg mb-2">Due Date</label>
+                <input type="date" id="dueDate" class="p-2 border rounded w-full" required>
+            </div>
+            <div class="mb-4">
+                <label for="reminderTime" class="block text-lg mb-2">Reminder Time</label>
+                <input type="time" id="reminderTime" class="p-2 border rounded w-full" required>
+            </div>
+            <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded">Submit</button>
+        </form>
+        <div id="activeTasks" class="mt-6 w-full max-w-sm bg-white p-4 rounded shadow text-lg">
+            <h2 class="text-xl mb-2">Active Tasks</h2>
+            <ul id="activeTaskList"></ul>
+        </div>
+        <div id="completedTasks" class="mt-6 w-full max-w-sm bg-white p-4 rounded shadow text-lg">
+            <h2 class="text-xl mb-2">Completed Tasks</h2>
+            <ul id="completedTaskList"></ul>
+        </div>
+    </div>
+    <footer class="text-center mt-6">
+        <a href="https://www.youtube.com/channel/UC4erjjJw8-e_JFcvAwrRn1A" target="_blank" class="underline">Made with ❤️ by Shammi Akhtar</a>
+    </footer>
+
+    <script>
+        const taskForm = document.getElementById('taskForm');
+        const activeTaskList = document.getElementById('activeTaskList');
+        const completedTaskList = document.getElementById('completedTaskList');
+
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || { active: [], completed: [] };
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        function displayTasks() {
+            activeTaskList.innerHTML = '';
+            completedTaskList.innerHTML = '';
+
+            tasks.active.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `${task.description} - Due: ${task.dueDate} 
+                                <button class="mx-2 p-1 bg-green-500 text-white rounded" onclick="completeTask(${index})">Complete</button>`;
+                activeTaskList.appendChild(li);
+            });
+
+            tasks.completed.forEach(task => {
+                const li = document.createElement('li');
+                li.textContent = `${task.description} - Completed`;
+                completedTaskList.appendChild(li);
+            });
+        }
+
+        function completeTask(index) {
+            const task = tasks.active.splice(index, 1)[0];
+            tasks.completed.push(task);
+            saveTasks();
+            displayTasks();
+        }
+
+        function scheduleNotification(task) {
+            const reminderDate = new Date(`${task.dueDate}T${task.reminderTime}`);
+            const timeToReminder = reminderDate.getTime() - Date.now();
+            
+            if (timeToReminder > 0) {
+                setTimeout(() => {
+                    new Notification(`Task Reminder`, {
+                        body: `It's time to complete your task: ${task.description}`
+                    });
+                }, timeToReminder);
+            }
+        }
+
+        taskForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const taskDescription = document.getElementById('taskDescription').value;
+            const dueDate = document.getElementById('dueDate').value;
+            const reminderTime = document.getElementById('reminderTime').value;
+
+            const task = { description: taskDescription, dueDate, reminderTime };
+            tasks.active.push(task);
+            saveTasks();
+            scheduleNotification(task);
+            displayTasks();
+            taskForm.reset();
+        });
+
+        if (Notification.permission !== "granted") {
+            Notification.requestPermission();
+        }
+
+        displayTasks();
+    </script>
+</body>
+</html>
